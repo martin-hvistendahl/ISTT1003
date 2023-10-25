@@ -40,11 +40,13 @@ def createModell():
     df2 = pd.read_csv("lego.population2.csv", sep=",", encoding="latin1")
 
     categories = ['boy', 'girl', 'neutral']
-    
+
     for category in categories:
         df_subset = df2[df2['gender'] == category]
         
         plt.figure()  # Create a new figure for each category
+        
+        title = f'Kryssplott med regresjonslinje (enkel LR) for {category}'
         
         if len(df_subset) > 1:  # Check if there are at least two data points for regression
             # Enkel lineær regresjon
@@ -62,14 +64,14 @@ def createModell():
             
             plt.scatter(df_subset['Pieces'], df_subset['Price'], label='Data Points')
             plt.plot(regression_x, regression_y, color='red', label='Regression Line')
-            plt.text(min(df_subset['Pieces']), max(df_subset['Price']), f'y = {slope:.2f}x + {intercept:.2f}', color='red')
+            title += f'\nRegression Formula: y = {slope:.2f}x + {intercept:.2f}'
         else:
             print(f"Not enough data points for {category} category to fit a regression model.")
             plt.text(0.5, 0.5, 'Not enough data points', horizontalalignment='center', verticalalignment='center')
         
         plt.xlabel('Antall brikker')
         plt.ylabel('Pris [$]')
-        plt.title(f'Kryssplott med regresjonslinje (enkel LR) for {category}')
+        plt.title(title)
         plt.legend()
         plt.grid()
         plt.show()
