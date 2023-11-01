@@ -11,6 +11,19 @@ import statsmodels.api as sm
 
 df2 = pd.read_csv("lego.population2.csv", sep=",", encoding="latin1")
 
+def numberOfObservations():
+    # Number of observations for boys
+    df_subset_boy = df2[df2['gender'] == 'boy']
+    print(len(df_subset_boy), 'Observasjoner rettet mot gutter')
+
+    # Number of observations for girls
+    df_subset_girl = df2[df2['gender'] == 'girl']
+    print(len(df_subset_girl), 'Observasjoner rettet mot jenter')
+
+    # Number of observations for neutral
+    df_subset_girl = df2[df2['gender'] == 'neutral']
+    print(len(df_subset_girl), 'Kjønnsnøytrale observasjoner')
+
 def cleanData():
     df = pd.read_csv("lego.population.csv", sep = ",", encoding = "latin1")
 
