@@ -237,7 +237,55 @@ def create3DPlot():
         else:
             print(f"Not enough data points for {category} category to fit a regression model.")
 
+def max2000():
+    df2 = pd.read_csv("lego.population2.csv", sep=",", encoding="latin1")
+
+    categories = ['boy', 'girl', 'neutral']
+
+    # Limit the dataset to 2,000 pieces
+    df2 = df2[df2['Pieces'] <= 2000]
+    max_price = int(np.ceil(max(df2['Price']) / 100) * 100)
+
+    for category in categories:
+        df_subset = df2[df2['gender'] == category]
+        
+        plt.figure()  # Create a new figure for each category
+        
+        title = f'Kryssplott med regresjonslinje (enkel LR) for {category}'
+        
+        if len(df_subset) > 1:  # Check if there are at least two data points for regression
+            # Enkel lineær regresjon
+            formel = 'Price ~ Pieces'
+            modell = smf.ols(formel, data=df_subset)
+            resultat = modell.fit()
+            
+            print(f"Summary for {category}:\n", resultat.summary())
+            
+            slope = resultat.params['Pieces']
+            intercept = resultat.params['Intercept']
+            
+            regression_x = np.array(df_subset['Pieces'])
+            regression_y = slope * regression_x + intercept
+            
+            plt.scatter(df_subset['Pieces'], df_subset['Price'], label='Data Points')
+            plt.plot(regression_x, regression_y, color='red', label='Regression Line')
+            title += f'\nRegression Formula: y = {slope:.2f}x + {intercept:.2f}'
+        else:
+            print(f"Not enough data points for {category} category to fit a regression model.")
+            plt.text(0.5, 0.5, 'Not enough data points', horizontalalignment='center', verticalalignment='center')
+        
+        plt.xlabel('Antall brikker')
+        plt.ylabel('Pris [$]')
+        plt.title(title)
+        plt.xticks(np.arange(0, 2001, 1000))  # Adjusted to only include ticks up to 2000
+        plt.yticks(np.arange(0, max_price + 1, 100))
+        plt.legend()
+        plt.grid()
+        plt.show()
+        
 #regression_plot_price_pieces()
 #regression_plot_price_pieces_pages()
-regression_plot_price_pieces_by_gender()
+#regression_plot_price_pieces_by_gender()
 #regression_plot_price_pieces_gender_combined()
+max2000()
+#print(df2[df2['gender'] == 'girl'].max())
