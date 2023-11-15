@@ -125,7 +125,6 @@ def regression_plot_price_pieces_pages():
         plt.show()
     else:
         print("Not enough data points to fit a regression model.")
-
 #3a Pris beskrevet av antall brikker for de forskjellige gruppene; gutt, jente og nøytral
 def regression_plot_price_pieces_by_gender():
 
@@ -170,9 +169,7 @@ def regression_plot_price_pieces_by_gender():
         plt.legend()
         plt.grid()
         plt.show()
-
 #3b Regresjonslinjene for de forskjellige gruppene inn i en modell.
-
 def regression_plot_price_pieces_gender_combined():
     categories = ['boy', 'girl', 'neutral']
     colors = {'boy': 'dodgerblue', 'girl': 'magenta', 'neutral': 'green'}
@@ -211,9 +208,8 @@ def regression_plot_price_pieces_gender_combined():
     plt.grid(True)
     plt.show()
 
-
 #4 Pris beskrevet av antall brikker og antall sider i bruksanvisningen for de forskjellige gruppene;  gutt, jente og nøytral.
-def create3DPlot():
+def regression_plot_price_pieces_pages_gender():
     df2 = pd.read_csv("lego.population2.csv", sep=",", encoding="latin1")
 
     categories = ['boy', 'girl', 'neutral']
@@ -242,64 +238,15 @@ def create3DPlot():
             ax.set_title(f'3D-plot av Lego-sett ({category})')
             
             plt.show()
+            
+            model = smf.ols('Price ~ Pieces + Pages', data=df_subset).fit()
+            print(model.summary()) 
+           
+        
         else:
             print(f"Not enough data points for {category} category to fit a regression model.")
 
-
-    df2 = pd.read_csv("lego.population2.csv", sep=",", encoding="latin1")
-
-    categories = ['boy', 'girl', 'neutral']
-
-    # Limit the dataset to 2,000 pieces
-    df2 = df2[df2['Pieces'] <= 2000]
-    max_price = int(np.ceil(max(df2['Price']) / 100) * 100)
-
-    for category in categories:
-        df_subset = df2[df2['gender'] == category]
-        
-        plt.figure()  # Create a new figure for each category
-        
-        title = f'Kryssplott med regresjonslinje (enkel LR) for {category}'
-        
-        if len(df_subset) > 1:  # Check if there are at least two data points for regression
-            # Enkel lineær regresjon
-            formel = 'Price ~ Pieces'
-            modell = smf.ols(formel, data=df_subset)
-            resultat = modell.fit()
-            
-            print(f"Summary for {category}:\n", resultat.summary())
-            
-            slope = resultat.params['Pieces']
-            intercept = resultat.params['Intercept']
-            
-            regression_x = np.array(df_subset['Pieces'])
-            regression_y = slope * regression_x + intercept
-            
-            plt.scatter(df_subset['Pieces'], df_subset['Price'], label='Data Points')
-            plt.plot(regression_x, regression_y, color='red', label='Regression Line')
-            title += f'\nRegression Formula: y = {slope:.2f}x + {intercept:.2f}'
-        else:
-            print(f"Not enough data points for {category} category to fit a regression model.")
-            plt.text(0.5, 0.5, 'Not enough data points', horizontalalignment='center', verticalalignment='center')
-        
-        plt.xlabel('Antall brikker')
-        plt.ylabel('Pris [$]')
-        plt.title(title)
-        plt.xticks(np.arange(0, 2001, 1000))  # Adjusted to only include ticks up to 2000
-        plt.yticks(np.arange(0, max_price + 1, 100))
-        plt.legend()
-        plt.grid()
-        plt.show()
-
-
-#regression_plot_price_pieces()
-#regression_plot_price_pieces_pages()
-#regression_plot_price_pieces_by_gender()
-#regression_plot_price_pieces_gender_combined()
-
-#qq_scatter_plot()
-#qq_scatter_plot2()
-
+regression_plot_price_pieces_pages_gender()
 def dataInformation():
     #lage en stolpediagram med antall og pris for alle gruppene sammen
     plt.hist(df2['Price'], bins=20, color='skyblue', edgecolor='black')
@@ -371,40 +318,75 @@ def reg_konf():
     plt.grid(True)
     plt.show()  
 
-resultater = []
-categories = ['boy', 'girl', 'neutral']
-colors = {'boy': 'dodgerblue', 'girl': 'magenta', 'neutral': 'green'}
-#make the girl dots and line black
-for i, category in enumerate(categories):
-    modell3 = smf.ols('Price ~ Pieces' , data = df2[df2['gender'].isin([category])])
-    resultater.append(modell3.fit())
+def skjæringspunkt5CB():
+    resultater = []
+    categories = ['boy', 'girl', 'neutral']
+    colors = {'boy': 'dodgerblue', 'girl': 'magenta', 'neutral': 'green'}
+    #make the girl dots and line black
+    for i, category in enumerate(categories):
+        modell3 = smf.ols('Price ~ Pieces' , data = df2[df2['gender'].isin([category])])
+        resultater.append(modell3.fit())
+        
+    for i, category in enumerate(categories):
+        slope = resultater[i].params['Pieces']
+        intercept = resultater[i].params['Intercept']
+
+        regression_x = np.array(df2[df2['gender'].isin([category])]['Pieces'])
+        regression_y = slope * regression_x + intercept
+
+        # Plot scatter plot and regression line
+        plt.scatter(df2[df2['gender'].isin([category])]['Pieces'], df2[df2['gender'].isin([category])]['Price'], color=colors[category])
+        plt.plot(regression_x, regression_y, color=colors[category], label=category)
+        
+    plt.xlabel('Antall brikker')
+    plt.ylabel('Pris')
+    plt.title('Kryssplott med regresjonslinjer')
+    plt.legend()
+    plt.grid()
+    plt.show()
+
+
+    # multippel lineær regresjon
+    modell3_mlr = smf.ols('Price ~ Pieces + gender' , data = df2)
+    modell3_mlr.fit().summary()
+
+    print(modell3_mlr.fit().summary())
+
+def skjæringspunkt5CC():
+    # Fitte modellen med interaksjonstermen
+    model = smf.ols('Price ~ Pieces * C(gender)', data=df2)
+    results = model.fit()
+    print(results.summary())
     
-for i, category in enumerate(categories):
-    slope = resultater[i].params['Pieces']
-    intercept = resultater[i].params['Intercept']
-
-    regression_x = np.array(df2[df2['gender'].isin([category])]['Pieces'])
-    regression_y = slope * regression_x + intercept
-
-    # Plot scatter plot and regression line
-    plt.scatter(df2[df2['gender'].isin([category])]['Pieces'], df2[df2['gender'].isin([category])]['Price'], color=colors[category])
-    plt.plot(regression_x, regression_y, color=colors[category], label=category)
+    # Kategorier og farger
+    categories = ['boy', 'girl', 'neutral']
+    colors = {'boy': 'dodgerblue', 'girl': 'magenta', 'neutral': 'green'}
     
-plt.xlabel('Antall brikker')
-plt.ylabel('Pris')
-plt.title('Kryssplott med regresjonslinjer')
-plt.legend()
-plt.grid()
-plt.show()
-
-
-# multippel lineær regresjon
-modell3_mlr = smf.ols('Price ~ Pieces + gender' , data = df2)
-modell3_mlr.fit().summary()
-
-print(modell3_mlr.fit().summary())
-
-modell3_mlr1 = smf.ols('Price ~ Pieces * gender' , data = df2)
-modell3_mlr1.fit().summary()
-
-print(modell3_mlr1.fit().summary())
+    # Plotte de forskjellige linjene
+    for category in categories:
+        # Filtrer data for hver kategori
+        subset = df2[df2['gender'] == category]
+        
+        # Beregne forventede verdier basert på modellen
+        subset['predicted_price'] = results.predict(subset)
+        
+        # Sorter for plotting
+        subset_sorted = subset.sort_values('Pieces')
+        
+        # Plotte linjen for hver kategori
+        plt.plot(subset_sorted['Pieces'], subset_sorted['predicted_price'], 
+                 color=colors[category], label=f'{category} line')
+        
+        # Plotte datapunktene for hver kategori
+        plt.scatter(subset['Pieces'], subset['Price'], 
+                    color=colors[category], alpha=0.5, label=f'{category} data')
+    
+    # Plottegenskaper
+    plt.xlabel('Antall brikker')
+    plt.ylabel('Pris [$]')
+    plt.title('Kryssplott med regresjonslinjer for hver kjønnskategori')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+# skjæringspunkt5CB()    
+# skjæringspunkt5CC()
