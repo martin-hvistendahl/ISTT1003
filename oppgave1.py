@@ -10,6 +10,7 @@ import statsmodels.formula.api as smf
 import statsmodels.api as sm
 
 df2 = pd.read_csv("lego.population2.csv", sep=",", encoding="latin1")
+df = pd.read_csv("lego.population.csv", sep=",", encoding="latin1")
 
 def numberOfObservations():
     # Number of observations for boys
@@ -24,9 +25,15 @@ def numberOfObservations():
     df_subset_girl = df2[df2['gender'] == 'neutral']
     print(len(df_subset_girl), 'Kjønnsnøytrale observasjoner')
 
-def cleanData():
-    df = pd.read_csv("lego.population.csv", sep = ",", encoding = "latin1")
+    # Number of unique themes
+    unique_themes = df['Theme'].unique()
+    print(len(unique_themes), 'Unike temaer')
 
+    # Create a DataFrame from the unique themes and save it to a CSV file
+    themes_df = pd.DataFrame({'Theme': unique_themes})
+    themes_df.to_csv('lego.themes.csv', index=False)
+
+def cleanData():
     # fjerner forklaringsvariabler vi ikke trenger
     df2 = df[['Set_Name', 'Theme', 'Pieces', 'Price', 'Pages', 'Minifigures', 'Unique_Pieces']]
 
