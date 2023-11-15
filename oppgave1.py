@@ -43,8 +43,8 @@ def cleanData():
     # og gjør så prisen om til float
     df2['Price'] = df2['Price'].astype(float)
 
-    gutt_theme=["NINJAGO", "Star Wars", "Marvel", "Batman","Speed Champions", "Hidden Side","Jurassic World", "Overwatch", "Spider-Man", "DC", "Monkie Kid", "Powered UP"]
-    jente_theme=["Disney","Friends", "Unikitty", "LEGO Frozen 2", "Trolls World Tour", "Powerpuff Girls"]
+    gutt_theme=["NINJAGO", "Star Wars", "Marvel", "Batman","Speed Champions", "Hidden Side","Jurassic World", "Overwatch", "Spider-Man", "DC", "Monkie Kid", "Powered UP", "Technic"]
+    jente_theme=["Disney","Friends", "Unikitty", "LEGO Frozen 2", "Trolls World Tour", "Powerpuff Girls", "DOTS"]
 
     #if df2['Theme'] = gutt_theme sett gutt, elif df2['Theme'] = jente else neutral
     df2['gender'] = np.where(df2['Theme'].isin(gutt_theme), 'boy', np.where(df2['Theme'].isin(jente_theme), 'girl', 'neutral'))
@@ -111,8 +111,9 @@ def regression_plot_price_pieces_pages():
         # Creating a custom legend
         scatter_proxy = plt.Line2D([0],[0], linestyle="none", c='b', marker = 'o')
         surface_proxy = plt.Rectangle((0,0),1,1,fc="r", alpha=0.3)
-        ax.legend([scatter_proxy, surface_proxy], ['Data Points', 'Regression Surface'], numpoints = 1)
-        
+        equation = f"Price = {model.intercept_:.2f} + ({model.coef_[0]:.2f} * Pieces) + ({model.coef_[1]:.2f} * Pages)"
+        ax.text2D(0.05, 0.95, equation, transform=ax.transAxes)
+
         plt.show()
     else:
         print("Not enough data points to fit a regression model.")
@@ -203,7 +204,6 @@ def regression_plot_price_pieces_gender_combined():
     plt.show()
 
 
-
 #4 Pris beskrevet av antall brikker og antall sider i bruksanvisningen for de forskjellige gruppene;  gutt, jente og nøytral.
 def create3DPlot():
     df2 = pd.read_csv("lego.population2.csv", sep=",", encoding="latin1")
@@ -237,7 +237,7 @@ def create3DPlot():
         else:
             print(f"Not enough data points for {category} category to fit a regression model.")
 
-def max2000():
+
     df2 = pd.read_csv("lego.population2.csv", sep=",", encoding="latin1")
 
     categories = ['boy', 'girl', 'neutral']
@@ -282,10 +282,133 @@ def max2000():
         plt.legend()
         plt.grid()
         plt.show()
+
+def qq_scatter_plot():
+    categories = ['boy', 'girl', 'neutral']
+
+    max_pieces = int(np.ceil(max(df2['Pieces']) / 1000) * 1000)
+    max_price = int(np.ceil(max(df2['Price']) / 100) * 100)
+
+    for category in categories:
+        df_subset = df2[df2['gender'] == category]
         
+        title = f'Kryssplott med regresjonslinje (enkel LR) for {category}'
+        
+        if len(df_subset) > 1:  # Check if there are at least two data points for regression
+            # Enkel lineær regresjon
+            formel = 'Price ~ Pieces'
+            modell = smf.ols(formel, data=df_subset)
+            resultat = modell.fit()
+            
+            print(f"Summary for {category}:\n", resultat.summary())
+            
+            # Plotte predikert verdi mot residual
+            figure, axis = plt.subplots(1, 2, figsize=(15, 5))
+            
+            sns.scatterplot(x=resultat.fittedvalues, y=resultat.resid, ax=axis[0])
+            axis[0].set_ylabel("Residual")
+            axis[0].set_xlabel("Predikert verdi")
+            axis[0].set_title(f'Predikert vs Residual for {category}')
+            axis[0].axhline(0, color='red', linestyle='--')
+            
+            # Lage kvantil-kvantil-plott for residualene
+            sm.qqplot(resultat.resid, line='45', fit=True, ax=axis[1])
+            axis[1].set_ylabel("Kvantiler i residualene")
+            axis[1].set_xlabel("Kvantiler i normalfordelingen")
+            axis[1].set_title(f'Q-Q Plott for {category}')
+            
+            plt.suptitle(title)
+            
+            plt.show()
+        else:
+            print(f"Not enough data points for {category} category to fit a regression model.")
+def qq_scatter_plot2():
+    categories = ['boy', 'girl', 'neutral']
+
+    max_pieces = int(np.ceil(max(df2['Pieces']) / 1000) * 1000)
+    max_price = int(np.ceil(max(df2['Price']) / 100) * 100)
+
+    for category in categories:
+        df_subset = df2[df2['gender'] == category]
+        
+        title = f'Kryssplott med regresjonslinje (enkel LR) for {category}'
+        
+        if len(df_subset) > 1:  # Check if there are at least two data points for regression
+            # Enkel lineær regresjon
+            formula = 'Price ~ Pieces'
+            model = smf.ols(formula, data=df_subset)
+            results = model.fit()
+            
+            print(f"Summary for {category}:\n", results.summary())
+            
+            # Plotte predikert verdi mot residual
+            figure, axis = plt.subplots(1, 2, figsize=(15, 5))
+            
+            sns.scatterplot(x=results.fittedvalues, y=results.resid, ax=axis[0])
+            axis[0].set_ylabel("Residual")
+            axis[0].set_xlabel("Predikert verdi")
+            axis[0].set_title(f'Predikert vs Residual for {category}')
+            axis[0].axhline(0, color='red', linestyle='--')
+            
+            # Lage kvantil-kvantil-plott for residualene
+            sm.qqplot(results.resid, line='45', fit=True, ax=axis[1])
+            axis[1].set_ylabel("Kvantiler i residualene")
+            axis[1].set_xlabel("Kvantiler i normalfordelingen")
+            axis[1].set_title(f'Q-Q Plott for {category}')
+            axis[1].set_ylim(-2, 2)  # Set y-axis limits for the Q-Q plot
+            
+            plt.suptitle(title)
+            
+            plt.show()
+        else:
+            print(f"Not enough data points for {category} category to fit a regression model.")
+
 #regression_plot_price_pieces()
 #regression_plot_price_pieces_pages()
 #regression_plot_price_pieces_by_gender()
 #regression_plot_price_pieces_gender_combined()
-max2000()
-#print(df2[df2['gender'] == 'girl'].max())
+
+#qq_scatter_plot()
+#qq_scatter_plot2()
+
+def dataInformation():
+    #lage en stolpediagram med antall og pris for alle gruppene sammen
+    plt.hist(df2['Price'], bins=20, color='skyblue', edgecolor='black')
+    plt.xlabel('Pris i dollar [$]')
+    plt.ylabel('Antall sett')
+    plt.gca().set_aspect(1)
+    plt.show()
+    
+    plt.scatter(df2['Pieces'], df2['Price'])
+    plt.xlabel('Antall brikker')
+    plt.ylabel('Pris i dollar [$]')
+    plt.gca().set_aspect(5)
+    plt.show()
+    
+    #find min max mean, mediam
+    print("min",df2['Price'].min())
+    print("max",df2['Price'].max())
+    print("gjennomsnitt",df2['Price'].mean())
+    print("median",df2['Price'].median())
+    
+    
+    
+dataInformation()
+
+
+formel = 'Price ~ Pieces'
+
+modell = smf.ols(formel, data = df2)
+resultat = modell.fit()
+ 
+print(resultat.summary())
+
+figure, axis = plt.subplots(1, 2, figsize = (15, 5))
+sns.scatterplot(x = resultat.fittedvalues, y = resultat.resid, ax = axis[0])
+axis[0].set_ylabel("Residual")
+axis[0].set_xlabel("Predikert verdi")
+
+sm.qqplot(resultat.resid, line = '45', fit = True, ax = axis[1])
+axis[1].set_ylabel("Kvantiler i residualene")
+axis[1].set_xlabel("Kvantiler i normalfordelingen")
+plt.show()
