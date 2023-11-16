@@ -61,14 +61,44 @@ def cleanData():
     df2[["Pieces", "Price", "Pages", "Unique_Pieces", "gender"]].to_csv('lego.population2.csv', index=False)
     print(df2.loc[df2['Price'].idxmax()])
 
-#1 Pris beskrevet av antall brikker.
-def regression_plot_price_pieces():
-    df2 = pd.read_csv("lego.population2.csv", sep=",", encoding="latin1")
-
-    # Enkel lineær regresjon
+def dataInformation():
+    #lage en stolpediagram med antall og pris for alle gruppene sammen
+    plt.hist(df2['Price'], bins=20, color='skyblue', edgecolor='black')
+    plt.xlabel('Pris i dollar [$]')
+    plt.ylabel('Antall sett')
+    plt.gca().set_aspect(1)
+    plt.show()
+    
+    plt.scatter(df2['Pieces'], df2['Price'])
+    plt.xlabel('Antall brikker')
+    plt.ylabel('Pris i dollar [$]')
+    plt.gca().set_aspect(5)
+    plt.show()
+    
+    #find min max mean, mediam
+    print("min",df2['Price'].min())
+    print("max",df2['Price'].max())
+    print("gjennomsnitt",df2['Price'].mean())
+    print("median",df2['Price'].median())
+    
+def metode1():
+    formel = 'Price ~ Pieces'
     model = smf.ols('Price ~ Pieces', data=df2).fit()
+    modell = smf.ols(formel, data = df2)
+    # resultat = modell.fit()
+    
     print(model.summary())
 
+    figure, axis = plt.subplots(1, 2, figsize = (15, 5))
+    sns.scatterplot(x = model.fittedvalues, y = model.resid, ax = axis[0])
+    axis[0].set_ylabel("Residual")
+    axis[0].set_xlabel("Predikert verdi")
+
+    sm.qqplot(model.resid, line = '45', fit = True, ax = axis[1])
+    axis[1].set_ylabel("Kvantiler i residualene")
+    axis[1].set_xlabel("Kvantiler i normalfordelingen")
+    plt.show()   
+    
     slope = model.params['Pieces']
     intercept = model.params['Intercept']
     regression_function = f'Price = {slope:.2f} * x + {intercept:.2f}'
@@ -90,10 +120,9 @@ def regression_plot_price_pieces():
 
     plt.legend()
     plt.grid(True)
-    plt.show()
+    plt.show()    
 
-# 2 Pris beskrevet av antall brikker og antall sider i bruksanvisningen.
-def regression_plot_price_pieces_pages():
+def metode2():
 
     X = df2[['Pieces', 'Pages']]
     y = df2['Price']
@@ -125,8 +154,8 @@ def regression_plot_price_pieces_pages():
         plt.show()
     else:
         print("Not enough data points to fit a regression model.")
-#3a Pris beskrevet av antall brikker for de forskjellige gruppene; gutt, jente og nøytral
-def regression_plot_price_pieces_by_gender():
+ 
+def metode3a():
 
     categories = ['boy', 'girl', 'neutral']
 
@@ -168,191 +197,38 @@ def regression_plot_price_pieces_by_gender():
         plt.yticks(np.arange(0, max_price + 1, 100))
         plt.legend()
         plt.grid()
-        plt.show()
-#3b Regresjonslinjene for de forskjellige gruppene inn i en modell.
-def regression_plot_price_pieces_gender_combined():
-    categories = ['boy', 'girl', 'neutral']
-    colors = {'boy': 'dodgerblue', 'girl': 'magenta', 'neutral': 'green'}
+        plt.show()   
 
-    # Set up the plot
-    plt.figure(figsize=(10, 6))
+def metode3b():
+    modell3_mlr = smf.ols('Price ~ Pieces + C(gender)', data = df2)
+    resultat = modell3_mlr.fit()
 
-    # Loop through each category
-    for category in categories:
-        # Filter the data for the current category
-        df_subset = df2[df2['gender'] == category]
-
-        # Prepare the data for regression
-        X = df_subset['Pieces']
-        X = sm.add_constant(X)  # Adds a constant term to the predictor
-        y = df_subset['Price']
-
-        # Fit the model
-        model = sm.OLS(y, X).fit()
-
-        # Make predictions for the line
-        x_vals = np.linspace(X['Pieces'].min(), X['Pieces'].max(), 100)
-        y_vals = model.params['const'] + model.params['Pieces'] * x_vals
-
-        # Plot the line
-        plt.plot(x_vals, y_vals, label=f'{category.capitalize()} (y = {model.params["Pieces"]:.2f}x + {model.params["const"]:.2f})', color=colors[category])
-
-        # Plot the data points
-        plt.scatter(X['Pieces'], y, alpha=0.5, color=colors[category])
-
-    # Customize the plot
-    plt.xlabel('Pieces')
-    plt.ylabel('Price')
-    plt.title('Price vs. Pieces by Gender')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
-#4 Pris beskrevet av antall brikker og antall sider i bruksanvisningen for de forskjellige gruppene;  gutt, jente og nøytral.
-def regression_plot_price_pieces_pages_gender():
-    df2 = pd.read_csv("lego.population2.csv", sep=",", encoding="latin1")
-
-    categories = ['boy', 'girl', 'neutral']
-    
-    for category in categories:
-        df_subset = df2[df2['gender'] == category]
-        
-        if len(df_subset) > 1:
-            X = df_subset[['Pieces', 'Pages']]
-            y = df_subset['Price']
-            
-            model = LinearRegression().fit(X, y)
-            
-            x_surf, y_surf = np.meshgrid(np.linspace(X['Pieces'].min(), X['Pieces'].max(), 100), np.linspace(X['Pages'].min(), X['Pages'].max(), 100))
-            z_surf = model.intercept_ + model.coef_[0] * x_surf + model.coef_[1] * y_surf
-            
-            fig = plt.figure()
-            ax = fig.add_subplot(111, projection='3d')
-            
-            ax.scatter(X['Pieces'], X['Pages'], y, color='b', label='Data Points')
-            ax.plot_surface(x_surf, y_surf, z_surf, color='r', alpha=0.3, label='Regression Surface')
-            
-            ax.set_xlabel('Antall brikker')
-            ax.set_ylabel('Sider i bruksanvisning')
-            ax.set_zlabel('Pris [$]')
-            ax.set_title(f'3D-plot av Lego-sett ({category})')
-            
-            plt.show()
-            
-            model = smf.ols('Price ~ Pieces + Pages', data=df_subset).fit()
-            print(model.summary()) 
-           
-        
-        else:
-            print(f"Not enough data points for {category} category to fit a regression model.")
-
-regression_plot_price_pieces_pages_gender()
-def dataInformation():
-    #lage en stolpediagram med antall og pris for alle gruppene sammen
-    plt.hist(df2['Price'], bins=20, color='skyblue', edgecolor='black')
-    plt.xlabel('Pris i dollar [$]')
-    plt.ylabel('Antall sett')
-    plt.gca().set_aspect(1)
-    plt.show()
-    
-    plt.scatter(df2['Pieces'], df2['Price'])
-    plt.xlabel('Antall brikker')
-    plt.ylabel('Pris i dollar [$]')
-    plt.gca().set_aspect(5)
-    plt.show()
-    
-    #find min max mean, mediam
-    print("min",df2['Price'].min())
-    print("max",df2['Price'].max())
-    print("gjennomsnitt",df2['Price'].mean())
-    print("median",df2['Price'].median())
-    
-    formel = 'Price ~ Pieces'
-
-    modell = smf.ols(formel, data = df2)
-    resultat = modell.fit()
-    
     print(resultat.summary())
 
-    figure, axis = plt.subplots(1, 2, figsize = (15, 5))
-    sns.scatterplot(x = resultat.fittedvalues, y = resultat.resid, ax = axis[0])
-    axis[0].set_ylabel("Residual")
-    axis[0].set_xlabel("Predikert verdi")
-
-    sm.qqplot(resultat.resid, line = '45', fit = True, ax = axis[1])
-    axis[1].set_ylabel("Kvantiler i residualene")
-    axis[1].set_xlabel("Kvantiler i normalfordelingen")
-    plt.show()
-    
-    
-def reg_konf():   
-    formel = 'Price ~ Pieces'
-
-    modell = smf.ols(formel, data=df2)
-    resultat = modell.fit()    
-    slope = resultat.params['Pieces']
-    intercept = resultat.params['Intercept']
-
-    regression_x = np.array(df2['Pieces'])
-    regression_y = slope * regression_x + intercept
-    predictions = resultat.get_prediction(df2).summary_frame(alpha=0.05)  # 95% konfidensintervall
-
-    # Plukker ut nedre og øvre grense for konfidensintervallene
-    ci_lower = predictions['obs_ci_lower']
-    ci_upper = predictions['obs_ci_upper']
-
-    # Plotter datapunktene
-    plt.scatter(df2['Pieces'], df2['Price'], label='Data Points')
-
-    # Plotter regresjonslinjen
-    plt.plot(regression_x, regression_y, color='red', label='Regression Line')
-
-    # Plotter konfidensintervallene
-    plt.fill_between(regression_x, ci_lower, ci_upper, color='blue', alpha=0.1, label='95% CI')
-
-    # Plottegenskaper
-    plt.xlabel('Antall brikker')
-    plt.ylabel('Pris [$]')
-    plt.title('Kryssplott med regresjonslinje og konfidensintervall')
-    plt.legend()
-    plt.grid(True)
-    plt.show()  
-
-def skjæringspunkt5CB():
-    resultater = []
+    # Definerer kategorier og farger
     categories = ['boy', 'girl', 'neutral']
-    colors = {'boy': 'dodgerblue', 'girl': 'magenta', 'neutral': 'green'}
-    #make the girl dots and line black
-    for i, category in enumerate(categories):
-        modell3 = smf.ols('Price ~ Pieces' , data = df2[df2['gender'].isin([category])])
-        resultater.append(modell3.fit())
-        
-    for i, category in enumerate(categories):
-        slope = resultater[i].params['Pieces']
-        intercept = resultater[i].params['Intercept']
+    colors = {'boy': 'dodgerblue', 'girl': 'black', 'neutral': 'green'}
 
-        regression_x = np.array(df2[df2['gender'].isin([category])]['Pieces'])
-        regression_y = slope * regression_x + intercept
+    # Plott for hvert kjønn
+    for category in categories:
+        # Filtrerer data for hver kategori
+        subset = df2[df2['gender'] == category]
 
-        # Plot scatter plot and regression line
-        plt.scatter(df2[df2['gender'].isin([category])]['Pieces'], df2[df2['gender'].isin([category])]['Price'], color=colors[category])
-        plt.plot(regression_x, regression_y, color=colors[category], label=category)
-        
+        # Beregner forventet pris basert på modellen
+        predicted_price = resultat.predict(subset)
+
+        # Plotter scatter plot og regresjonslinje
+        plt.scatter(subset['Pieces'], subset['Price'], color=colors[category], label=category)
+        plt.plot(subset['Pieces'], predicted_price, color=colors[category])
+
     plt.xlabel('Antall brikker')
     plt.ylabel('Pris')
-    plt.title('Kryssplott med regresjonslinjer')
+    plt.title('Kryssplott med regresjonslinjer fra MLR-modell')
     plt.legend()
     plt.grid()
     plt.show()
 
-
-    # multippel lineær regresjon
-    modell3_mlr = smf.ols('Price ~ Pieces + gender' , data = df2)
-    modell3_mlr.fit().summary()
-
-    print(modell3_mlr.fit().summary())
-
-def skjæringspunkt5CC():
+def metode3c():
     # Fitte modellen med interaksjonstermen
     model = smf.ols('Price ~ Pieces * C(gender)', data=df2)
     results = model.fit()
@@ -388,5 +264,14 @@ def skjæringspunkt5CC():
     plt.legend()
     plt.grid(True)
     plt.show()
-# skjæringspunkt5CB()    
-# skjæringspunkt5CC()
+
+def metode4():
+    # Opprette interaksjonstermer for Pieces og Pages med gender
+    model_formula = 'Price ~ C(gender):Pieces + C(gender):Pages'
+
+    # Fitte modellen
+    model = smf.ols(model_formula, data=df2).fit()
+    
+    # Printe modellens sammendrag
+    print(model.summary())
+
